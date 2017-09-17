@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html lang="en"> 
+    <head> 
+        <meta charset="UTF-8" />
+        <title>Phaser - Making your first game, part 9</title>
+        <script type="text/javascript" src="js/phaser.2.6.2.min.js"></script>
+        <style type="text/css">
+            body {
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+
+        <script type="text/javascript">
+
+            var game = new Phaser.Game(800, 600, Phaser.AUTO, '', {preload: preload, create: create, update: update});
+            function preload() {
+                game.load.image('arania', 'egipto/arania.png');
+                game.load.image('boton', 'egipto/boton.png');
+                game.load.image('sky', 'egipto/fondo.jpg');
+                game.load.image('ground', 'egipto/plataformas.png');
+                game.load.spritesheet('hombre', 'egipto/hombre corriendo.png', 128.8, 160);
+                game.load.spritesheet('arena', 'egipto/arena.png', 668, 27.6);
+                game.load.image('artefacto', 'egipto/piramide.png');
+                game.load.spritesheet('escorpion', 'egipto/escorpion.png', 88, 64);
+
+            }
+            var booleano = true, izq = false, arania, arania1, arania2;
+            var escorpion, cursors;
+            var vidas = 5;
+            var vidasText;
+            var fondo;
+            var player;
+            var atacando = false;
+            var msj;
+            var fin = false;
+            var artefacto;
+            var exito = true, exito1 = true, exito2 = true;
+            var arena, arena1, arena2;
+            var finJuego = false;
+            function create() {
+                game.world.setBounds(0, 0, 1600, 600);
+                game.physics.startSystem(Phaser.Physics.ARCADE);
+                fondo = game.add.sprite(0, 0, 'sky');
+                iniciarJugador();
+                iniciarArena();
+                iniciarPlataformas();
+                artefacto = game.add.sprite(1500, 150, 'artefacto');
+                artefacto.scale.setTo(0.1, 0.1);
+                artefacto.enableBody = true;
+                game.physics.arcade.enable(artefacto);
+                reiniciar = game.add.group();
+                reiniciar.enableBody = true;
+                escorpion = game.add.sprite(860, 250, 'escorpion');
+                escorpion.animations.add('moverder', [0, 1, 2, 3, 4, 5, 6, 7], 10, true);
+                escorpion.animations.add('moverizq', [14, 15, 16, 17, 18, 19, 20, 21], 10, true);
+                escorpion.animations.add('atacarder', [8, 9, 10], 5, true);
+                escorpion.animations.add('atacarizq', [13, 12, 11], 5, true);
+                game.physics.arcade.enable(escorpion);
+                escorpion.body.gravity.y = 300;
+                escorpion.enableBody = true;
+                iniciarAranias();
+                vidasText = game.add.text(180, 16, 'Vidas: 5', {fontSize: '32px', fill: '#000'});
+                cursors = game.input.keyboard.createCursorKeys();
+            }
+
+
+            function update() {
+
+                arena.animations.play('mover');
+                arena1.animations.play('mover');
+                arena2.animations.play('mover');
+                game.camera.follow(player);
+                vidasText.x = game.camera.x + 16;
+                game.physics.arcade.collide(player, platforms);
+                game.physics.arcade.collide(escorpion, platforms);
+                game.physics.arcade.overlap(player, escorpion, dieE, null, this);
+                game.physics.arcade.overlap(player, artefacto, ganar, null, this);
+                if (!finJuego) {
+                    if ((distance(arania.body.center, player.body.center) <= 25) || (distance(arania1.body.center, player.body.center) <= 25) || (distance(arania2.body.center, player.body.center) <= 25)) {
+                        dieA();
+                    }
+                    if (distance(escorpion, player) <= 40) {
+                        if (escorpion.x <= player.x) {
+                            escorpion.animations.play("atacarder");
+                        } else {
+                            escorpion.animations.play("atacarizq");
+                        }
+                        escorpion.body.velocity.x = 0;
+                        atacando = true;
+                    } else {
+                        console.log(escorpion.x);
+                        if (fin) {
+                            escorpion.body.velocity.x = 150;
+                            escorpion.animations.play('moverder');
+                            atacando = false;
+                            fin = !(escorpion.x > 1150);
+                        }
+                        else {
+                            escorpion.body.velocity.x = -150;
+                            escorpion.animations.play('moverizq');
+                            atacando = false;
+                            fin = escorpion.x < 880;
+                        }
+                    }
+                    if (player.y > game.world.height - 140) {
+                        player.body.gravity.y = 1;
+                        if (cursors.up.isDown) {
+                            player.body.velocity.y = -10;
+                        }
+                        else {
+                            player.body.velocity.y = 10;
+                        }
+                    }
+                    else {
+                        player.body.gravity.y = 300;
+                    }
+
+                    if (cursors.up.isDown) {
+                        if (player.body.touching.down) {
+                            player.body.velocity.y = -350;
+                        } else {
+                            if (cursors.right.isDown) {
+                                player.body.velocity.x = 150;
+                                player.frame = 6;
+                            }
+                            else {
+                                if (cursors.left.isDown) {
+                                    player.body.velocity.x = -150;
+                                    player.frame = 11;
+                                }
+                            }
+                        }
+
+                    }
+                    if (cursors.right.isDown) {
+                        izq = false;
+                        player.body.velocity.x = 150;
+                        player.animations.play('derecha');
+                    }
+                    else {
+                        if (cursors.left.isDown) {
+                            izq = true;
+                            player.body.velocity.x = -150;
+                            player.animations.play('izquierda');
+                        }
+                        else {
+                            player.animations.stop();
+                            player.body.velocity.x = 0;
+                            if (izq) {
+                                player.frame = 17;
+                            }
+                            else {
+                                player.frame = 0;
+                            }
+                        }
+                    }
+                    if (exito) {
+                        arrive(arania, new Phaser.Point(600, 200));
+                        exito = !(distance(arania, new Phaser.Point(600, 200)) < 5);
+                    }
+                    if (exito1) {
+                        arrive(arania1, new Phaser.Point(200, 250));
+                        exito1 = !(distance(arania1, new Phaser.Point(200, 250)) < 5);
+                    }
+                    if (exito2) {
+                        arrive(arania2, new Phaser.Point(1470, 350));
+                        exito2 = !(distance(arania2, new Phaser.Point(1470, 350)) < 5);
+                    }
+                    if (!exito) {
+                        arrive(arania, new Phaser.Point(200, 0));
+                        exito = (distance(arania, new Phaser.Point(200, 0)) < 5);
+                    }
+                    if (!exito1) {
+                        arrive(arania1, new Phaser.Point(600, 0));
+                        exito1 = (distance(arania1, new Phaser.Point(600, 0)) < 5);
+
+                    }
+                    if (!exito2) {
+                        arrive(arania2, new Phaser.Point(1100, 0));
+                        exito2 = (distance(arania2, new Phaser.Point(1100, 0)) < 5);
+                    }
+                    if (player.y === game.world.height - 80) {
+                        dieA();
+                    }
+                    if (booleano === true) {
+                        artefacto.body.velocity.y = -40;
+                        if (artefacto.y < 50) {
+                            booleano = false;
+                        }
+                    }
+                    else {
+                        artefacto.body.velocity.y = 40;
+                        if (artefacto.y > 140) {
+                            booleano = true;
+                        }
+                    }
+                    if (vidas <= 0) {
+                        player.animations.stop();
+                        escorpion.animations.stop();
+                        player.body.velocity.x = 0;
+                        escorpion.body.velocity.x = 0;
+                        arania.body.velocity.x = 0;
+                        arania.body.velocity.y = 0;
+                        arania1.body.velocity.x = 0;
+                        arania1.body.velocity.y = 0;
+                        arania2.body.velocity.x = 0;
+                        arania2.body.velocity.y = 0;
+                        finJuego = true;
+
+                    }
+
+                }
+
+            }
+            function dieA() {
+                player.kill();
+                if (vidas - 1 >= 0) {
+                    vidas -= 1;
+                }
+                vidasText.text = 'Vidas: ' + vidas;
+                if (vidas > 0) {
+                    iniciarJugador();
+                    game.camera.follow(player);
+                    iniciarArena();
+                }
+                else {
+                    finJuego = true;
+                    msj = game.add.text(game.camera.x, 300, 'REINICIAR?', {fontSize: '100px', fill: '#000'});
+                    boton = reiniciar.create(game.camera.x + 600, 300, 'boton');
+                    boton.scale.setTo(0.25, 0.25);
+                    boton.inputEnabled = true;
+                    boton.events.onInputDown.add(reinicio, this);
+                }
+            }
+            function iniciarJugador() {
+                player = game.add.sprite(0, game.world.height / 2, 'hombre'); //32 igual anterior
+                player.scale.setTo(0.5, 0.5);
+                game.physics.arcade.enable(player);
+                player.body.gravity.y = 300;
+                player.body.collideWorldBounds = true;
+                player.animations.add('derecha', [1, 2, 3, 4, 5, 6, 7, 8], 12, true);
+                player.animations.add('izquierda', [16, 15, 14, 13, 12, 11, 10, 9], 12, true);
+            }
+            function iniciarPlataformas() {
+                platforms = game.add.group();
+                platforms.enableBody = true;
+                var ground = platforms.create(0, game.world.height - 64, 'ground');
+                ground.scale.setTo(0.10, 1);
+                ground.body.immovable = true;
+                var ledge = platforms.create(190, 350, 'ground');
+                ledge.scale.setTo(0.07, 0.4);
+                ledge.body.immovable = true;
+                ledge = platforms.create(260, 150, 'ground');
+                ledge.scale.setTo(0.07, 0.40);
+                ledge.body.immovable = true;
+                ledge = platforms.create(450, 300, 'ground');
+                ledge.scale.setTo(0.05, 0.40);
+                ledge.body.immovable = true;
+                ledge = platforms.create(550, 420, 'ground');
+                ledge.scale.setTo(0.1, 0.40);
+                ledge.body.immovable = true;
+                ledge = platforms.create(850, 480, 'ground');
+                ledge.scale.setTo(0.3, 0.40);
+                ledge.body.immovable = true;
+                ledge = platforms.create(850, 320, 'ground');
+                ledge.scale.setTo(0.3, 0.40);
+                ledge.body.immovable = true;
+                ledge = platforms.create(1450, 200, 'ground');
+                ledge.scale.setTo(0.10, 0.40);
+                ledge.body.immovable = true;
+                ledge = platforms.create(1450, 400, 'ground');
+                ledge.scale.setTo(0.05, 0.40);
+                ledge.body.immovable = true;
+            }
+
+            function iniciarAranias() {
+                arania = game.add.sprite(200, 0, 'arania'); //32 igual anterior
+                arania.scale.setTo(0.15, 0.15);
+                game.physics.arcade.enable(arania);
+                arania.MAX_SPEED = 100;
+                arania.MAX_STEER = 3;
+                arania.MAX_SPEED_SQ = arania.MAX_SPEED * arania.MAX_SPEED;
+                arania.MAX_STEER_SQ = arania.MAX_STEER * arania.MAX_STEER;
+                arania1 = game.add.sprite(600, 0, 'arania'); //32 igual anterior
+                arania1.scale.setTo(0.15, 0.15);
+                game.physics.arcade.enable(arania1);
+                arania1.MAX_SPEED = 300;
+                arania1.MAX_STEER = 4;
+                arania1.MAX_SPEED_SQ = arania1.MAX_SPEED * arania1.MAX_SPEED;
+                arania1.MAX_STEER_SQ = arania1.MAX_STEER * arania1.MAX_STEER;
+                arania2 = game.add.sprite(1100, 0, 'arania'); //32 igual anterior
+                arania2.scale.setTo(0.15, 0.15);
+                game.physics.arcade.enable(arania2);
+                arania2.MAX_SPEED = 300;
+                arania2.MAX_STEER = 4;
+                arania2.MAX_SPEED_SQ = arania2.MAX_SPEED * arania2.MAX_SPEED;
+                arania2.MAX_STEER_SQ = arania2.MAX_STEER * arania2.MAX_STEER;
+            }
+            function iniciarArena() {
+                arena = game.add.sprite(120, game.world.height - 64, 'arena');
+                arena.scale.setTo(3, 1);
+                game.physics.arcade.enable(arena);
+                arena1 = game.add.sprite(120, game.world.height - 42, 'arena');
+                arena1.scale.setTo(3, 1);
+                game.physics.arcade.enable(arena1);
+                arena2 = game.add.sprite(120, game.world.height - 20, 'arena');
+                arena2.scale.setTo(3, 1);
+                game.physics.arcade.enable(arena2);
+                arena.animations.add('mover', [0, 1, 2, 3, 4, 5], 8, true);
+                arena1.animations.add('mover', [0, 1, 2, 3, 4, 5], 8, true);
+                arena2.animations.add('mover', [0, 1, 2, 3, 4, 5], 8, true);
+            }
+
+            function dieE(p, en) {
+                if (((atacando) && (en.frame === 10 || en.frame === 11))) {
+                    player.kill();
+                    vidas -= 1;
+                    vidasText.text = 'Vidas: ' + vidas;
+                    if (vidas > 0) {
+                        iniciarJugador();
+                        game.camera.follow(player);
+                        iniciarArena();
+                    }
+                    else {
+                        msj = game.add.text(game.camera.x, 300, 'REINICIAR?', {fontSize: '100px', fill: '#000'});
+                        boton = reiniciar.create(game.camera.x + 600, 300, 'boton');
+                        boton.scale.setTo(0.25, 0.25);
+                        boton.inputEnabled = true;
+                        boton.events.onInputDown.add(reinicio, this);
+                    }
+                }
+            }
+            function reinicio() {
+                finJuego = false;
+                vidas = 5;
+                game.state.start(game.state.current);
+            }
+            function ganar() {
+                player.animations.stop();
+                escorpion.animations.stop();
+                player.body.velocity.x = 0;
+                escorpion.body.velocity.x = 0;
+                arania.body.velocity.x = 0;
+                arania.body.velocity.y = 0;
+                arania1.body.velocity.x = 0;
+                arania1.body.velocity.y = 0;
+                arania2.body.velocity.x = 0;
+                arania2.body.velocity.y = 0;
+                finJuego = true;
+                artefacto.kill();
+                msj = game.add.text(game.camera.x, 300, 'GANASTE!!', {fontSize: '100px', fill: '#000'});
+
+            }
+            function distance(a, b) {
+                return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+            }
+///ARRIVE
+            function arrive(vehiculo, objetivo) {
+                var vectorDesired;
+                vectorDesired = calcularDesiredVelocity(vehiculo, objetivo);
+                //Obtengo el vector de fuerza
+                var vectorSteeringForce;
+                vectorSteeringForce = calcularSteeringForce(vehiculo, vectorDesired);
+                //aplico el vector de fuerza al vehiculo
+                aplicarVectorDeFuerza(vehiculo, vectorSteeringForce);
+            }
+
+            function calcularDesiredVelocity(vehiculo, objetivo) {
+                // Calculo el vector deseado = normalizado(POSICION TARGET - POSICION this.sprite) * maximaVelocidad
+                var distancia = distance(vehiculo, objetivo);
+                var vectorDesired;
+                if (distancia < 300)
+                {
+                    //aca reducimos
+                    vectorDesired = ((Phaser.Point.subtract(objetivo, vehiculo.position)).normalize()).multiply(distancia, distancia);
+                } else
+                {
+                    vectorDesired = ((Phaser.Point.subtract(objetivo, vehiculo.position)).normalize()).multiply(vehiculo.MAX_SPEED, vehiculo.MAX_SPEED);
+                }
+                return vectorDesired;
+            }
+
+            function calcularSteeringForce(vehiculo, vectorDesired) {
+                //Calculo el vector de fueza = vector deseado - velocidad actual del vehiculo
+                var vectorSteeringForce;
+                vectorSteeringForce = Phaser.Point.subtract(vectorDesired, vehiculo.body.velocity);
+                //limito la magnitud del vector, es decir la fuerza que se le va a aplicar
+                if (vectorSteeringForce.getMagnitudeSq() > vehiculo.MAX_STEER_SQ) {
+                    vectorSteeringForce.setMagnitude(vehiculo.MAX_STEER);
+                }
+                return vectorSteeringForce;
+            }
+
+            function aplicarVectorDeFuerza(vehiculo, vectorSteeringForce) {
+
+                //Calculo la nueva velocidad y posicion del vehiculo sumando la posicion con el vector de fuerza
+                vehiculo.body.velocity.add(vectorSteeringForce.x, vectorSteeringForce.y);
+                //si la velocidad nueva es mayor a la maxima velocidad determinada, se deja la maxima.
+                if (vehiculo.body.velocity.getMagnitudeSq() > vehiculo.MAX_SPEED_SQ) {
+                    vehiculo.body.velocity.setMagnitude(vehiculo.MAX_SPEED);
+                }
+            }
+
+
+
+        </script>
+
+    </body>
+</html>

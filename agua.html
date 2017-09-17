@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html lang="en"> 
+    <head> 
+        <meta charset="UTF-8" />
+        <title>Phaser - Making your first game, part 9</title>
+        <script type="text/javascript" src="js/phaser.2.6.2.min.js"></script>
+        <style type="text/css">
+            body {
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+
+        <script type="text/javascript">
+            var game = new Phaser.Game(800, 600, Phaser.AUTO, '', {preload: preload, create: create, update: update});
+            function preload() {
+                game.load.image('fondo', 'agua/fondo.png');
+                game.load.image('boton', 'agua/boton.png');
+                game.load.image('nave', 'agua/nave.png');
+                game.load.spritesheet('calamar', 'agua/calamar.png', 127.7, 51);
+                game.load.spritesheet('tiburon', 'agua/tiburon.png', 198.5, 72, 34);
+                game.load.spritesheet('pez malo', 'agua/pezM.png', 665, 312);
+                game.load.spritesheet('pez asustado', 'agua/pezA.png', 676, 241);
+                game.load.image('artefacto', 'agua/artefacto.png');
+            }
+            var artefacto;
+            var abajo;
+            var tiburon, tiburon1, calamar, calamar1, calamar2;
+            var pezM, pezM1, pezB;
+            var cursors;
+            var vidas = 5;
+            var vidasText;
+            var player;
+            var atacando = false, atacando1 = false, atacando2 = false, atacando3 = false, atacando4 = false;
+            var msj;
+            var fin = false, finJuego = false;
+            var doblarder = false, doblarizq = true;
+            var doblarder2 = false, doblarizq2 = true;
+            var exito = false, exito1 = false, exito2 = true, exito3 = true, exito4 = true, booleano = true;
+            function iniciarPeces() {
+                pezM = game.add.sprite(game.world.centerX, 100, 'pez malo');
+                pezM.scale.setTo(0.15, 0.15);
+                game.physics.enable(pezM, Phaser.Physics.ARCADE);
+                pezM.MAX_SPEED = 180;
+                pezM.MAX_STEER = 4;
+                pezM.MAX_SPEED_SQ = pezM.MAX_SPEED * pezM.MAX_SPEED;
+                pezM.MAX_STEER_SQ = pezM.MAX_STEER * pezM.MAX_STEER;
+                pezM.body.collideWorldBounds = true;
+                pezM1 = game.add.sprite(game.world.centerX - 100, 100, 'pez malo');
+                pezM1.scale.setTo(0.15, 0.15);
+                game.physics.enable(pezM1, Phaser.Physics.ARCADE);
+                pezM1.MAX_SPEED = 250;
+                pezM1.MAX_STEER = 4;
+                pezM1.MAX_SPEED_SQ = pezM1.MAX_SPEED * pezM1.MAX_SPEED;
+                pezM1.MAX_STEER_SQ = pezM1.MAX_STEER * pezM1.MAX_STEER;
+                pezM1.body.collideWorldBounds = true;
+                pezB = game.add.sprite(800, 150, 'pez asustado');
+                pezB.scale.setTo(0.15, 0.15);
+                game.physics.enable(pezB, Phaser.Physics.ARCADE);
+                pezB.enableBody = true;
+                pezB.body.collideWorldBounds = true;
+                pezM.enableBody = true;
+                pezM1.enableBody = true;
+                pezB.animations.add('izq', [0], 10, true);
+                pezB.animations.add('der', [1], 10, true);
+                pezM.animations.add('izq', [0], 10, true);
+                pezM.animations.add('der', [1], 10, true);
+                pezM1.animations.add('izq', [0], 10, true);
+                pezM1.animations.add('der', [1], 10, true);
+            }
+            function iniciarEnemigos() {
+                tiburon = game.add.sprite(100, 200, 'tiburon');
+                game.physics.arcade.enable(tiburon);
+                tiburon1 = game.add.sprite(1000, 400, 'tiburon');
+                game.physics.arcade.enable(tiburon1);
+                calamar = game.add.sprite(800, 300, 'calamar');
+                calamar.scale.setTo(1.5, 1.5);
+                game.physics.arcade.enable(calamar);
+                calamar1 = game.add.sprite(500, 50, 'calamar');
+                calamar1.scale.setTo(1.5, 1.5);
+                game.physics.arcade.enable(calamar1);
+                calamar2 = game.add.sprite(300, 500, 'calamar');
+                calamar2.scale.setTo(1.5, 1.5);
+                game.physics.arcade.enable(calamar2);
+                tiburon.animations.add('nadarder', [0, 1, 2, 3, 4], 10, true);
+                tiburon.animations.add('nadarizq', [34, 33, 32, 31, 30], 8, true);
+                tiburon.animations.add('doblarder', [26, 25, 24, 23, 22, 21, 20, 19, 18, 17], 10, true);
+                tiburon.animations.add('doblarizq', [8, 9, 10, 11, 12, 13, 14, 15, 16], 10, true);
+                tiburon.animations.add('atacarder', [5, 6, 7], 8, true);
+                tiburon.animations.add('atacarizq', [29, 28, 27], 8, true);
+
+                tiburon1.animations.add('nadarder', [0, 1, 2, 3, 4], 10, true);
+                tiburon1.animations.add('nadarizq', [34, 33, 32, 31, 30], 8, true);
+                tiburon1.animations.add('doblarder', [26, 25, 24, 23, 22, 21, 20, 19, 18, 17], 10, true);
+                tiburon1.animations.add('doblarizq', [8, 9, 10, 11, 12, 13, 14, 15, 16], 10, true);
+                tiburon1.animations.add('atacarder', [5, 6, 7], 8, true);
+                tiburon1.animations.add('atacarizq', [29, 28, 27], 8, true);
+
+                calamar.animations.add('atacarizq', [15, 16, 17], 8, true);
+                calamar.animations.add('nadarizq', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 10, true);
+                calamar.animations.add('nadarder', [35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21], 10, true);
+                calamar.animations.add('atacarder', [20, 19, 18], 8, true);
+
+                calamar1.animations.add('atacarizq', [15, 16, 17], 8, true);
+                calamar1.animations.add('nadarizq', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 10, true);
+                calamar1.animations.add('nadarder', [35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21], 10, true);
+                calamar1.animations.add('atacarder', [20, 19, 18], 8, true);
+
+                calamar2.animations.add('atacarizq', [15, 16, 17], 8, true);
+                calamar2.animations.add('nadarizq', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 10, true);
+                calamar2.animations.add('nadarder', [35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21], 10, true);
+                calamar2.animations.add('atacarder', [20, 19, 18], 8, true);
+            }
+            function iniciarJugador() {
+                player = game.add.sprite(32, game.world.height / 2, 'nave');
+                player.scale.setTo(0.75, 0.75);
+                game.physics.arcade.enable(player);
+                player.body.collideWorldBounds = true;
+            }
+            function create() {
+                game.world.setBounds(0, 0, 1272, 600);
+                game.physics.startSystem(Phaser.Physics.ARCADE);
+                game.add.sprite(0, 0, 'fondo');
+                artefacto = game.add.sprite(1200, 100, 'artefacto');
+                artefacto.scale.setTo(0.1, 0.1);
+                game.physics.arcade.enable(artefacto);
+                artefacto.enableBody = true;
+                reiniciar = game.add.group();
+                reiniciar.enableBody = true;
+                iniciarPeces();
+                iniciarJugador();
+                iniciarEnemigos();
+                vidasText = game.add.text(16, 16, 'Vidas: 5', {fontSize: '32px', fill: '#000'});
+                abajo = game.input.keyboard.addKey(Phaser.KeyCode.DOWN);
+                cursors = game.input.keyboard.createCursorKeys();
+            }
+
+            function update() {
+                game.camera.follow(player);
+                vidasText.x = game.camera.x + 16;
+                game.physics.arcade.overlap(player, tiburon, dieE, null, this);
+                game.physics.arcade.overlap(player, tiburon1, dieE, null, this);
+                game.physics.arcade.overlap(player, calamar, dieE, null, this);
+                game.physics.arcade.overlap(player, calamar1, dieE, null, this);
+                game.physics.arcade.overlap(player, calamar2, dieE, null, this);
+                game.physics.arcade.overlap(player, artefacto, ganar, null, this);
+                if (!finJuego) {
+                    if (distance(tiburon.body.center, player.body.center) <= 85 && distance(tiburon.body.center, player.body.center) >= 75 && (tiburon.y < (player.y + 20) && tiburon.y > (player.y - 20))) {
+                        if (tiburon.body.center.x >= player.body.center.x) {
+                            tiburon.animations.play("atacarizq");
+                            atacando = true;
+
+                        } else {
+                            tiburon.animations.play("atacarder");
+                            atacando = true;
+
+                        }
+                        tiburon.body.velocity.x = 0;
+                    } else {
+                        if (doblarizq && exito === false) {
+                            tiburon.animations.play('nadarder');
+                            tiburon.body.velocity.x = 230;
+                            exito = tiburon.x >= 1000;
+                        }
+                        if (exito === true && !doblarder) {
+                            tiburon.animations.play('doblarizq');
+                            tiburon.body.velocity.x = 0;
+                            if (tiburon.frame === 16) {
+                                doblarder = true;
+                                doblarizq = false;
+                            }
+                        }
+                        if (doblarder && exito === true) {
+                            tiburon.animations.play('nadarizq');
+                            tiburon.body.velocity.x = -230;
+                            exito = !(tiburon.x <= 100.9);
+                        }
+                        if (exito === false && !doblarizq) {
+                            tiburon.animations.play('doblarder');
+                            tiburon.body.velocity.x = 0;
+                            if (tiburon.frame === 17) {
+                                doblarizq = true;
+                                doblarder = false;
+                            }
+                        }
+                        atacando = false;
+                    }
+
+                    if (distance(tiburon1.body.center, player.body.center) <= 85 && distance(tiburon1.body.center, player.body.center) >= 75 && (tiburon1.y < (player.y + 20) && tiburon1.y > (player.y - 20))) {
+                        if (tiburon1.body.center.x >= player.body.center.x) {
+                            tiburon1.animations.play("atacarizq");
+                            atacando2 = true;
+
+                        } else {
+                            tiburon1.animations.play("atacarder");
+                            atacando2 = true;
+
+                        }
+                        tiburon1.body.velocity.x = 0;
+                    } else {
+                        if (doblarizq2 && exito2 === false) {
+                            tiburon1.animations.play('nadarder');
+                            tiburon1.body.velocity.x = 270;
+                            exito2 = tiburon1.x >= 1000;
+                        }
+                        if (exito2 === true && !doblarder2) {
+                            tiburon1.animations.play('doblarizq');
+                            tiburon1.body.velocity.x = 0;
+                            if (tiburon1.frame === 16) {
+                                doblarder2 = true;
+                                doblarizq2 = false;
+                            }
+                        }
+                        if (doblarder2 && exito2 === true) {
+                            tiburon1.animations.play('nadarizq');
+                            tiburon1.body.velocity.x = -270;
+                            exito2 = !(tiburon1.x <= 100.9);
+                        }
+                        if (exito2 === false && !doblarizq2) {
+                            tiburon1.animations.play('doblarder');
+                            tiburon1.body.velocity.x = 0;
+                            if (tiburon1.frame === 17) {
+                                doblarizq2 = true;
+                                doblarder2 = false;
+                            }
+                        }
+                        atacando2 = false;
+                    }
+
+                    if (distance(calamar.body.center, player.body.center) <= 80 && distance(calamar.body.center, player.body.center) >= 70 && (calamar.y < (player.y + 30) && calamar.y > (player.y - 30))) {
+                        if (calamar.body.center.x >= player.body.center.x) {
+                            calamar.animations.play("atacarder");
+                            atacando1 = true;
+
+                        } else {
+                            calamar.animations.play("atacarizq");
+                            atacando1 = true;
+                        }
+                        calamar.body.velocity.x = 0;
+                    } else {
+                        if (!exito1) {
+                            calamar.animations.play('nadarder');
+                            calamar.body.velocity.x = 230;
+                            exito1 = calamar.x >= 800;
+                        }
+                        else {
+                            calamar.animations.play('nadarizq');
+                            calamar.body.velocity.x = -230;
+                            exito1 = calamar.x >= 100;
+                        }
+                        atacando1 = false;
+                    }
+
+                    if (distance(calamar1.body.center, player.body.center) <= 80 && distance(calamar1.body.center, player.body.center) >= 70 && (calamar1.y < (player.y + 30) && calamar1.y > (player.y - 30))) {
+                        if (calamar1.body.center.x >= player.body.center.x) {
+                            calamar1.animations.play("atacarder");
+                            atacando3 = true;
+
+                        } else {
+                            calamar1.animations.play("atacarizq");
+                            atacando3 = true;
+                        }
+                        calamar1.body.velocity.x = 0;
+                    } else {
+                        if (!exito3) {
+                            calamar1.animations.play('nadarder');
+                            calamar1.body.velocity.x = 200;
+                            exito3 = calamar1.x >= 900;
+                        }
+                        else {
+                            calamar1.animations.play('nadarizq');
+                            calamar1.body.velocity.x = -200;
+                            exito3 = calamar1.x >= 200;
+                        }
+                        atacando3 = false;
+                    }
+                    if (distance(calamar2.body.center, player.body.center) <= 80 && distance(calamar2.body.center, player.body.center) >= 70 && (calamar2.y < (player.y + 30) && calamar2.y > (player.y - 30))) {
+                        if (calamar2.body.center.x >= player.body.center.x) {
+                            calamar2.animations.play("atacarder");
+                            atacando4 = true;
+
+                        } else {
+                            calamar2.animations.play("atacarizq");
+                            atacando4 = true;
+                        }
+                        calamar2.body.velocity.x = 0;
+                    } else {
+                        if (!exito4) {
+                            calamar2.animations.play('nadarder');
+                            calamar2.body.velocity.x = 250;
+                            exito4 = calamar2.x >= 900;
+                        }
+                        else {
+                            calamar2.animations.play('nadarizq');
+                            calamar2.body.velocity.x = -250;
+                            exito4 = calamar2.x >= 200;
+                        }
+                        atacando4 = false;
+                    }
+
+                    if (vidas === 0) {
+                        tiburon.animations.stop();
+                        tiburon1.animations.stop();
+                        calamar.animations.stop();
+                        calamar1.animations.stop();
+                        calamar2.animations.stop();
+                        tiburon.body.velocity.x = 0;
+                        tiburon1.body.velocity.x = 0;
+                        calamar.body.velocity.x = 0;
+                        calamar1.body.velocity.x = 0;
+                        calamar2.body.velocity.x = 0;
+                    }
+                    if (cursors.up.isDown) {
+                        player.body.velocity.y = -150;
+
+                    } else {
+
+                        if (abajo.isDown) {
+                            player.body.velocity.y = 150;
+                        }
+                        else {
+                            if (cursors.right.isDown) {
+                                player.body.velocity.x = 150;
+                            }
+                            else {
+                                if (cursors.left.isDown) {
+                                    player.body.velocity.x = -150;
+                                }
+                                else {
+                                    player.body.velocity.x = 0;
+                                    player.body.velocity.y = 0;
+
+                                }
+                            }
+
+                        }
+                    }
+                    if (fin) {
+                        pezB.body.velocity.x = -150;
+                        pezB.animations.play("izq");
+                        pezM.animations.play("izq");
+                        pezM1.animations.play("izq");
+                        fin = !(pezB.x === 0);
+                    } else {
+                        pezB.body.velocity.x = 150;
+                        pezB.animations.play("der");
+                        pezM.animations.play("der");
+                        pezM1.animations.play("der");
+                        fin = pezB.x === 1170.6;
+
+                    }
+
+                    pursuit(pezM, pezB.body);
+                    pursuit(pezM1, pezB.body);
+                    if (booleano === true) {
+                        artefacto.body.velocity.y = -40;
+                        if (artefacto.y < 50) {
+                            booleano = false;
+                        }
+                    }
+                    else {
+                        artefacto.body.velocity.y = 40;
+                        if (artefacto.y > 500) {
+                            booleano = true;
+                        }
+                    }
+
+                }
+
+                function dieE(player, enemigo) {
+                    if ((atacando || atacando1 || atacando2 || atacando3 || atacando4) ) {
+                        player.kill();
+                        vidas -= 1;
+                        vidasText.text = 'Vidas: ' + vidas;
+                        if (vidas > 0) {
+                            iniciarJugador();
+                            tiburon.kill();
+                            tiburon1.kill();
+                            calamar.kill();
+                            calamar1.kill();
+                            calamar2.kill();
+                            iniciarEnemigos();
+                            game.camera.follow(player);
+                        }
+                        else {
+                            msj = game.add.text(game.camera.x, 300, 'REINICIAR?', {fontSize: '100px', fill: '#000'});
+                            boton = reiniciar.create(game.camera.x + 600, 300, 'boton');
+                            boton.scale.setTo(0.25, 0.25);
+                            boton.inputEnabled = true;
+                            boton.events.onInputDown.add(reinicio, this);
+                        }
+                    }
+
+                }
+            }
+
+            function ganar() {
+                artefacto.kill();
+                msj = game.add.text(game.camera.x, 100, 'BIEN!\nPARA SIGUIENTE NIVEL..\nPRESIONA EL BOTON', {fontSize: '50px', fill: '#000'});
+                atacando = false;
+                atacando1 = false;
+                atacando2 = false;
+                atacando3 = false;
+                atacando4 = false;
+                tiburon.animations.stop();
+                tiburon1.animations.stop();
+                calamar.animations.stop();
+                calamar1.animations.stop();
+                calamar2.animations.stop();
+                tiburon.body.velocity.x = 0;
+                tiburon1.body.velocity.x = 0;
+                calamar.body.velocity.x = 0;
+                calamar1.body.velocity.x = 0;
+                calamar2.body.velocity.x = 0;
+                player.body.velocity.x = 0;
+                player.body.velocity.y = 0;
+                finJuego = true;
+                boton = reiniciar.create(game.camera.x + 100, 300, 'boton');
+                boton.scale.setTo(0.25, 0.25);
+                boton.inputEnabled = true;
+                boton.events.onInputDown.add(sigNivel, this);
+            }
+
+            function reinicio() {
+                vidas = 5;
+                game.state.start(game.state.current);
+            }
+            function sigNivel() {
+                location.href = "egipto.html";
+
+            }
+
+            function distance(a, b) {
+                return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+            }
+///PURSUIT
+            function pursuit(vehiculo, objetivo) {
+                T = distance(vehiculo.body, objetivo) / 150;
+                futurePosition = (Phaser.Point.add(objetivo.position, objetivo.velocity)).multiply(T, T);
+                seek(vehiculo, futurePosition);
+            }
+
+//SEEK
+            function seek(vehiculo, objetivo) {
+                //Obtengo la desired velocit
+                var vectorDesired;
+                vectorDesired = calcularDesiredVelocity(vehiculo, objetivo);
+                //Obtengo el vector de fuerza
+                var vectorSteeringForce;
+                vectorSteeringForce = calcularSteeringForce(vehiculo, vectorDesired);
+                //aplico el vector de fuerza al vehiculo
+                aplicarVectorDeFuerza(vehiculo, vectorSteeringForce);
+            }
+
+            function calcularDesiredVelocity(vehiculo, objetivo) {
+                // Calculo el vector deseado = normalizado(POSICION TARGET - POSICION VEHICULO) * maximaVelocidad
+                var vectorDesired;
+                vectorDesired = ((Phaser.Point.subtract(objetivo, vehiculo.position)).normalize()).multiply(vehiculo.MAX_SPEED, vehiculo.MAX_SPEED);
+                return vectorDesired;
+            }
+
+            function calcularSteeringForce(vehiculo, vectorDesired) {
+                //Calculo el vector de fueza = vector deseado - velocidad actual del vehiculo
+                var vectorSteeringForce;
+                vectorSteeringForce = Phaser.Point.subtract(vectorDesired, vehiculo.body.velocity);
+                //limito la magnitud del vector, es decir la fuerza que se le va a aplicar
+                if (vectorSteeringForce.getMagnitudeSq() > vehiculo.MAX_STEER_SQ) {
+                    vectorSteeringForce.setMagnitude(vehiculo.MAX_STEER);
+                }
+                return vectorSteeringForce;
+            }
+
+            function aplicarVectorDeFuerza(vehiculo, vectorSteeringForce) {
+                //Calculo la nueva velocidad y posicion del vehiculo sumando la posicion con el vector de fuerza
+                vehiculo.body.velocity.add(vectorSteeringForce.x, vectorSteeringForce.y);
+                //si la velocidad nueva es mayor a la maxima velocidad determinada, se deja la maxima.
+                if (vehiculo.body.velocity.getMagnitudeSq() > vehiculo.MAX_SPEED_SQ) {
+                    vehiculo.body.velocity.setMagnitude(vehiculo.MAX_SPEED);
+                }
+            }
+
+
+
+        </script>
+
+    </body>
+</html>
