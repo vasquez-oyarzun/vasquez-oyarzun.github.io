@@ -56,21 +56,18 @@ and open the template in the editor.
                 lider.body.collideWorldBounds = true;
                 lider.animations.add('izq', [0], 10, true);
                 lider.animations.add('der', [1], 10, true);
-                lider.maxSeparation = 100;
-                lider.separationRadius = 20;
                 lider.arriveRadius = 50;
-                lider.maxFleeSpeed = 80;
                 lider.maxSpeed = 80;
                 lider.behindDist = 10;
                 for (var i = 0; i < 6; i++) {
-                    peces[i] = game.add.sprite(Math.random() * 200, Math.random() * 150, 'pez malo');
+                    peces[i] = game.add.sprite(Math.random() * 200, 350, 'pez malo');
                     peces[i].scale.setTo(0.1, 0.1);
                     game.physics.enable(peces[i], Phaser.Physics.ARCADE);
                     peces[i].maxSeparation = 100;
-                    peces[i].separationRadius = 5;
+                    peces[i].separationRadius = 30;
                     peces[i].arriveRadius = 50;
                     peces[i].maxFleeSpeed = 80;
-                    peces[i].maxSpeed = 250;
+                    peces[i].maxSpeed = 100;
                     peces[i].behindDist = 60;
                     peces[i].identificacion = i;
                     peces[i].body.collideWorldBounds = true;
@@ -418,7 +415,7 @@ and open the template in the editor.
                 if (!arribo) {
                     aplicarFuerza(lider, arrive(lider, auxpunto), true);
                     arribo = distance(lider.body.center, auxpunto) < 50;
-                    console.log(distance(lider.body.center, auxpunto) + " distance")
+                    //console.log(distance(lider.body.center, auxpunto) + " distance")
                 }
                 else {
                     random = Math.random();
@@ -579,7 +576,6 @@ and open the template in the editor.
                 var fuerza = new Phaser.Point(0, 0);
                 var tv = new Phaser.Point(lider.body.velocity.x, lider.body.velocity.y);
 
-                //calcular el punto de adelante que hay que evadir del lider
                 tv.normalize();
                 tv.x = tv.x * lider.behindDist;
                 tv.y = tv.y * lider.behindDist;
@@ -587,8 +583,6 @@ and open the template in the editor.
                 var posy = lider.position.y + tv.y;
                 var ahead = new Phaser.Point(posx, posy);
 
-
-                //calcular el punto de atrás que hay que seguir y mantener distancia con el líder
                 tv.x = tv.x * -1;
                 tv.y = tv.y * -1;
                 posx = lider.position.x + tv.x;
@@ -596,60 +590,31 @@ and open the template in the editor.
                 var behind = new Phaser.Point(posx, posy);
 
 
-                behind = formacionWedge(agente.identificacion, behind);
+                behind = formacion(agente.identificacion, behind);
 
-                //si el personaje esta en el campo de vision del lider hay que evadir 
                 if (estaFrente(agente, lider, ahead)) {
-                    var evadir = evade(agente, lider, 40);
+                    var evadir = evade(agente, lider, 150);
                     fuerza.x = fuerza.x + evadir.x;
                     fuerza.y = fuerza.y + evadir.y;
                 }
 
-                //crear una fuerza para arribar al punto de atras del lider
                 var arribar = arrive(agente, behind);
                 fuerza.x = fuerza.x + arribar.x;
                 fuerza.y = fuerza.y + arribar.y;
 
-                //agregar la fuerza de separacion
                 var separar = separacion(agente, agentes);
                 fuerza.x = fuerza.x + separar.x;
                 fuerza.y = fuerza.y + separar.y;
 
                 return fuerza;
             }
-            function isEven(value) {
-                return (value % 2 === 0);
-            }
-            function AFormation(agente) {
-
-                var angulo1 = 240 + lider.angle;  //para hacer la ormacion en a
-                var angulo2 = 120 + lider.angle;
-                var anguloNuevo = angulo1;
-                var distanciaN = 0;
-                var n, inicio = 0;
-                if (isEven(agente.identificacion)) {
-                    anguloNuevo = angulo1;
-                    distanciaN += 100;
-                    // console.log(distanciaN);
-                } else {
-                    anguloNuevo = angulo2;
-                }
-                var x = lider.x + (distanciaN * Math.cos((anguloNuevo * Math.PI) / 180));
-
-                var y = lider.y + (distanciaN * Math.sin((anguloNuevo * Math.PI) / 180));
-                agente.body.angularVelocity = lider.body.angularVelocity;
-                return new Phaser.Point(x, y);
-            }
-
-
-
-            //se aplica arrive al punto que le corresponde atras del lider, o sea a behind
+         
             function arrive(agente, behind) {
                 var arrivar = Phaser.Point.subtract(behind, agente.position).normalize();
                 var distancia = distance(agente.position, behind);
-                if (distancia <= agente.arriveRadius)//le seteo 50 al radio de arribo donde los arrivals deben ir disminuyendo su velocidad
+                if (distancia <= agente.arriveRadius)
                 {
-                    arrivar.setMagnitude(agente.maxSpeed * (distancia / 50));//reduzco la velocidad gradualmente dependiendo de la velocidad
+                    arrivar.setMagnitude(agente.maxSpeed * (distancia / 50));
                 }
                 else
                 {
@@ -659,20 +624,19 @@ and open the template in the editor.
                 return Phaser.Point.subtract(arrivar, agente.body.velocity);
             }
 
-            //evade al lider teniendo en cuenta el campo de vision del mismo usa la funcion flee
             function evade(agente, lider, radioEvitacion) {
-                var distancia = new Phaser.Point(lider.position.x - agente.position.x, lider.position.y - agente.position.y);
-                var updatesAhead = distancia.getMagnitude() / agente.maxSpeed;
+                var distancia = distance(lider.position, agente.position);
+                var updatesAhead = distancia/ agente.maxSpeed;
                 var velocidadAjustada = new Phaser.Point(lider.body.velocity.x * updatesAhead, lider.body.velocity.y * updatesAhead);
                 var posicionFutura = new Phaser.Point(lider.position.x + velocidadAjustada.x, lider.position.y + velocidadAjustada.y);
                 return flee(agente, posicionFutura, radioEvitacion);
 
             }
 
-            //escapar de la posicion futura calculada anteriormente  
             function flee(agente, posicionFutura, radioEvitacion) {
                 var distancia = distance(agente.position, posicionFutura);
                 if (distancia <= radioEvitacion) {
+                    console.log(distancia);
                     var punto = Phaser.Point.subtract(agente.position, posicionFutura);
                     punto.normalize();
                     var flee = new Phaser.Point(punto.x * agente.maxFleeSpeed, punto.y * agente.maxFleeSpeed);
@@ -685,9 +649,9 @@ and open the template in the editor.
 
             function separacion(agente, agentes) {
                 var fuerza = new Phaser.Point(0, 0);
-                var vecinos = 0; //los vecinos son la flota que ocupa el mismo cargo que el agente
+                var vecinos = 0; 
                 for (var i = 0; i < agentes.length; i++) {
-                    if (agentes[i] !== agente && distance(agente.position, agentes[i].position) <= agente.separationRadius) {//si no es el agente y si la distancia entre estos agente y el agente a analizar es menor al radio de separacion
+                    if (agentes[i] !== agente && distance(agente.position, agentes[i].position) <= agente.separationRadius) {
                         fuerza.x = fuerza.x + agentes[i].position.x - agente.position.x;
                         fuerza.y = fuerza.y + agentes[i].position.y - agente.position.y;
                         vecinos++;
@@ -697,7 +661,7 @@ and open the template in the editor.
                     fuerza.x = fuerza.x / vecinos;
                     fuerza.y = fuerza.y / vecinos;
                     fuerza.x = fuerza.x * -1;
-                    fuerza.y = fuerza.y * -1; //se deben repeler es pro ello que calculo fuerzas contrarias
+                    fuerza.y = fuerza.y * -1;
                 }
                 fuerza.normalize();
                 fuerza.x = fuerza.x * agente.maxSeparation;
@@ -706,6 +670,7 @@ and open the template in the editor.
             }
 
             function estaFrente(agente, lider, ahead) {
+                
                 return distance(ahead, agente.position) <= campoVisionLider || distance(lider.position, agente.position) <= campoVisionLider;
 
             }
@@ -713,10 +678,8 @@ and open the template in the editor.
                 return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
             }
 
-            function formacionWedge(id, behind) {
-                //              console.log(lider);
-                console.log("rotacion del lider " + lider.rotation);
-                var rot = lider.rotation;//+ Math.PI / 3;
+            function formacion(id, behind) {
+                var rot = lider.rotation;
                 if (lider.body.velocity.x < 0) {
                     rot = lider.rotation - 0.6;
                 }
@@ -725,7 +688,6 @@ and open the template in the editor.
                         rot = lider.rotation + 2.54;
                     }
                 }
-                console.log(rot);
                 var sep = 80;
                 switch (id) {
                     case 0:
@@ -757,9 +719,6 @@ and open the template in the editor.
                         var d = Math.cos(rot + (Math.PI / 6)) * (sep * 2);
                         var r = Math.sin(rot + (Math.PI / 6)) * (sep * 2);
                         return new Phaser.Point(behind.x + d, behind.y + r);
-                        break;
-                    default:
-                        return behind;
                         break;
                 }
 
