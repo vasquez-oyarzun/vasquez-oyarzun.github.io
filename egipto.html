@@ -284,7 +284,7 @@ and open the template in the editor.
                 arania = game.add.sprite(200, 0, 'arania'); //32 igual anterior
                 arania.scale.setTo(0.15, 0.15);
                 game.physics.arcade.enable(arania);
-                arania.MAX_SPEED = 100;
+                arania.MAX_SPEED = 250;
                 arania.MAX_STEER = 3;
                 arania.MAX_SPEED_SQ = arania.MAX_SPEED * arania.MAX_SPEED;
                 arania.MAX_STEER_SQ = arania.MAX_STEER * arania.MAX_STEER;
@@ -376,7 +376,7 @@ and open the template in the editor.
                 // Calculo el vector deseado = normalizado(POSICION TARGET - POSICION this.sprite) * maximaVelocidad
                 var distancia = distance(vehiculo, objetivo);
                 var vectorDesired;
-                if (distancia < 300)
+                if (distancia < 200)
                 {
                     //aca reducimos
                     vectorDesired = ((Phaser.Point.subtract(objetivo, vehiculo.position)).normalize()).multiply(distancia, distancia);
@@ -399,7 +399,6 @@ and open the template in the editor.
             }
 
             function aplicarVectorDeFuerza(vehiculo, vectorSteeringForce) {
-
                 //Calculo la nueva velocidad y posicion del vehiculo sumando la posicion con el vector de fuerza
                 vehiculo.body.velocity.add(vectorSteeringForce.x, vectorSteeringForce.y);
                 //si la velocidad nueva es mayor a la maxima velocidad determinada, se deja la maxima.

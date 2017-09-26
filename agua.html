@@ -18,7 +18,7 @@ and open the template in the editor.
     <body>
 
         <script type="text/javascript">
-            var game = new Phaser.Game(800, 600, Phaser.AUTO, '', {preload: preload, create: create, update: update});
+            var game = new Phaser.Game(1272, 600, Phaser.AUTO, '', {preload: preload, create: create, update: update});
             function preload() {
                 game.load.image('fondo', 'agua/fondo.png');
                 game.load.image('boton', 'agua/boton.png');
@@ -29,6 +29,7 @@ and open the template in the editor.
                 game.load.spritesheet('pez asustado', 'agua/pezA.png', 676, 241);
                 game.load.image('artefacto', 'agua/artefacto.png');
             }
+            var peces = [];
             var artefacto;
             var abajo;
             var tiburon, tiburon1, calamar, calamar1, calamar2;
@@ -42,23 +43,56 @@ and open the template in the editor.
             var fin = false, finJuego = false;
             var doblarder = false, doblarizq = true;
             var doblarder2 = false, doblarizq2 = true;
-            var exito = false, exito1 = false, exito2 = true, exito3 = true, exito4 = true, booleano = true;
+            var exito = false, exito1 = false, exito2 = true, exito3 = true, exito4 = true, booleano = true, arribo = false;
+            var campoVisionLider = 50;
+            var puntos = [];
+            var random;
+            var auxpunto;
             function iniciarPeces() {
+                lider = game.add.sprite(200, 300, 'pez asustado');
+                lider.scale.setTo(0.1, 0.1);
+                game.physics.enable(lider, Phaser.Physics.ARCADE);
+                lider.enableBody = true;
+                lider.body.collideWorldBounds = true;
+                lider.animations.add('izq', [0], 10, true);
+                lider.animations.add('der', [1], 10, true);
+                lider.maxSeparation = 100;
+                lider.separationRadius = 20;
+                lider.arriveRadius = 50;
+                lider.maxFleeSpeed = 80;
+                lider.maxSpeed = 80;
+                lider.behindDist = 10;
+                for (var i = 0; i < 6; i++) {
+                    peces[i] = game.add.sprite(Math.random() * 200, Math.random() * 150, 'pez malo');
+                    peces[i].scale.setTo(0.1, 0.1);
+                    game.physics.enable(peces[i], Phaser.Physics.ARCADE);
+                    peces[i].maxSeparation = 100;
+                    peces[i].separationRadius = 5;
+                    peces[i].arriveRadius = 50;
+                    peces[i].maxFleeSpeed = 80;
+                    peces[i].maxSpeed = 250;
+                    peces[i].behindDist = 60;
+                    peces[i].identificacion = i;
+                    peces[i].body.collideWorldBounds = true;
+                    peces[i].enableBody = true;
+                    peces[i].animations.add('izq', [0], 10, true);
+                    peces[i].animations.add('der', [1], 10, true);
+                }
                 pezM = game.add.sprite(game.world.centerX, 100, 'pez malo');
                 pezM.scale.setTo(0.15, 0.15);
                 game.physics.enable(pezM, Phaser.Physics.ARCADE);
-                pezM.MAX_SPEED = 180;
-                pezM.MAX_STEER = 4;
-                pezM.MAX_SPEED_SQ = pezM.MAX_SPEED * pezM.MAX_SPEED;
-                pezM.MAX_STEER_SQ = pezM.MAX_STEER * pezM.MAX_STEER;
+                pezM.maxSpeed = 140;
+                pezM.maxSteer = 4;
+                pezM.maxSpeedSq = pezM.maxSpeed * pezM.maxSpeed;
+                pezM.maxSteerSq = pezM.maxSteer * pezM.maxSteer;
                 pezM.body.collideWorldBounds = true;
                 pezM1 = game.add.sprite(game.world.centerX - 100, 100, 'pez malo');
                 pezM1.scale.setTo(0.15, 0.15);
                 game.physics.enable(pezM1, Phaser.Physics.ARCADE);
-                pezM1.MAX_SPEED = 250;
-                pezM1.MAX_STEER = 4;
-                pezM1.MAX_SPEED_SQ = pezM1.MAX_SPEED * pezM1.MAX_SPEED;
-                pezM1.MAX_STEER_SQ = pezM1.MAX_STEER * pezM1.MAX_STEER;
+                pezM1.maxSpeed = 120;
+                pezM1.maxSteer = 4;
+                pezM1.maxSpeedSq = pezM1.maxSpeed * pezM1.maxSpeed;
+                pezM1.maxSteerSq = pezM1.maxSteer * pezM1.maxSteer;
                 pezM1.body.collideWorldBounds = true;
                 pezB = game.add.sprite(800, 150, 'pez asustado');
                 pezB.scale.setTo(0.15, 0.15);
@@ -124,6 +158,9 @@ and open the template in the editor.
                 player.body.collideWorldBounds = true;
             }
             function create() {
+                puntos[0] = new Phaser.Point(200, 300);
+                puntos[1] = new Phaser.Point(1000, 300);
+                auxpunto = puntos[0];
                 game.world.setBounds(0, 0, 1272, 600);
                 game.physics.startSystem(Phaser.Physics.ARCADE);
                 game.add.sprite(0, 0, 'fondo');
@@ -344,14 +381,22 @@ and open the template in the editor.
                     if (fin) {
                         pezB.body.velocity.x = -150;
                         pezB.animations.play("izq");
-                        pezM.animations.play("izq");
-                        pezM1.animations.play("izq");
+                        if (pezM.body.velocity.x < 0) {
+                            pezM.animations.play("izq");
+                        }
+                        if (pezM1.body.velocity.x < 0) {
+                            pezM1.animations.play("izq");
+                        }
                         fin = !(pezB.x === 0);
                     } else {
                         pezB.body.velocity.x = 150;
                         pezB.animations.play("der");
-                        pezM.animations.play("der");
-                        pezM1.animations.play("der");
+                        if (pezM.body.velocity.x > 0) {
+                            pezM.animations.play("der");
+                        }
+                        if (pezM1.body.velocity.x > 0) {
+                            pezM1.animations.play("der");
+                        }
                         fin = pezB.x === 1170.6;
 
                     }
@@ -370,36 +415,88 @@ and open the template in the editor.
                             booleano = true;
                         }
                     }
-
+                if (!arribo) {
+                    aplicarFuerza(lider, arrive(lider, auxpunto), true);
+                    arribo = distance(lider.body.center, auxpunto) < 50;
+                    console.log(distance(lider.body.center, auxpunto) + " distance")
                 }
-
-                function dieE(player, enemigo) {
-                    if ((atacando || atacando1 || atacando2 || atacando3 || atacando4) ) {
-                        player.kill();
-                        vidas -= 1;
-                        vidasText.text = 'Vidas: ' + vidas;
-                        if (vidas > 0) {
-                            iniciarJugador();
-                            tiburon.kill();
-                            tiburon1.kill();
-                            calamar.kill();
-                            calamar1.kill();
-                            calamar2.kill();
-                            iniciarEnemigos();
-                            game.camera.follow(player);
-                        }
-                        else {
-                            msj = game.add.text(game.camera.x, 300, 'REINICIAR?', {fontSize: '100px', fill: '#000'});
-                            boton = reiniciar.create(game.camera.x + 600, 300, 'boton');
-                            boton.scale.setTo(0.25, 0.25);
-                            boton.inputEnabled = true;
-                            boton.events.onInputDown.add(reinicio, this);
-                        }
+                else {
+                    random = Math.random();
+                    if (random < 0.5) {
+                        aplicarFuerza(lider, arrive(lider, puntos[0]));
+                        auxpunto = puntos[0];
                     }
-
+                    else {
+                        aplicarFuerza(lider, arrive(lider, puntos[1]));
+                        auxpunto = puntos[1];
+                    }
+                    arribo = false;
                 }
+                /*   if (a.isDown) {
+                 lider.rotation = lider.rotation + 1.5;
+                 }
+                 if (d.isDown) {
+                 lider.rotation = lider.rotation - 1.5;
+                 }*/
+
+                if (lider.body.velocity.x < 0) {
+                    lider.animations.play("izq");
+                }
+                else {
+                    if (lider.body.velocity.x > 0) {
+                        lider.animations.play("der");
+                    }
+                    else {
+
+                    }
+                }
+                for (var j = 0; j < peces.length; j++) {
+                    var f = followLeader(peces[j], peces);
+                    if (peces[j].body.velocity.x < 0) {
+                        peces[j].animations.play("izq");
+
+                    }
+                    else {
+                        peces[j].animations.play("der");
+                    }
+                    aplicarFuerza(peces[j], f, true);
+                }}
             }
 
+            function dieE(player, enemigo) {
+                if ((atacando || atacando1 || atacando2 || atacando3 || atacando4)) {
+                    player.kill();
+                    vidas -= 1;
+                    vidasText.text = 'Vidas: ' + vidas;
+                    if (vidas > 0) {
+                        iniciarJugador();
+                        tiburon.kill();
+                        tiburon1.kill();
+                        calamar.kill();
+                        calamar1.kill();
+                        calamar2.kill();
+                        iniciarEnemigos();
+                        game.camera.follow(player);
+                    }
+                    else {
+                        msj = game.add.text(game.camera.x, 300, 'REINICIAR?', {fontSize: '100px', fill: '#000'});
+                        boton = reiniciar.create(game.camera.x + 600, 300, 'boton');
+                        boton.scale.setTo(0.25, 0.25);
+                        boton.inputEnabled = true;
+                        boton.events.onInputDown.add(reinicio, this);
+                    }
+                }
+
+            }
+
+            function aplicarFuerza(agente, fuerza) {
+                var vecReference = new Phaser.Point(0, 0);
+                agente.body.velocity.add(fuerza.x, fuerza.y);
+                //si la velocidad nueva es mayor a la maxima velocidad determinada, se deja la maxima.
+                if (agente.body.velocity.getMagnitudeSq() > agente.maxSpeedSq) {
+                    agente.body.velocity.setMagnitude(agente.maxSpeed);
+                }
+            }
             function ganar() {
                 artefacto.kill();
                 msj = game.add.text(game.camera.x, 100, 'BIEN!\nPARA SIGUIENTE NIVEL..\nPRESIONA EL BOTON', {fontSize: '50px', fill: '#000'});
@@ -455,13 +552,13 @@ and open the template in the editor.
                 var vectorSteeringForce;
                 vectorSteeringForce = calcularSteeringForce(vehiculo, vectorDesired);
                 //aplico el vector de fuerza al vehiculo
-                aplicarVectorDeFuerza(vehiculo, vectorSteeringForce);
+                aplicarFuerza(vehiculo, vectorSteeringForce);
             }
 
             function calcularDesiredVelocity(vehiculo, objetivo) {
                 // Calculo el vector deseado = normalizado(POSICION TARGET - POSICION VEHICULO) * maximaVelocidad
                 var vectorDesired;
-                vectorDesired = ((Phaser.Point.subtract(objetivo, vehiculo.position)).normalize()).multiply(vehiculo.MAX_SPEED, vehiculo.MAX_SPEED);
+                vectorDesired = ((Phaser.Point.subtract(objetivo, vehiculo.position)).normalize()).multiply(vehiculo.maxSpeed, vehiculo.maxSpeed);
                 return vectorDesired;
             }
 
@@ -470,20 +567,205 @@ and open the template in the editor.
                 var vectorSteeringForce;
                 vectorSteeringForce = Phaser.Point.subtract(vectorDesired, vehiculo.body.velocity);
                 //limito la magnitud del vector, es decir la fuerza que se le va a aplicar
-                if (vectorSteeringForce.getMagnitudeSq() > vehiculo.MAX_STEER_SQ) {
-                    vectorSteeringForce.setMagnitude(vehiculo.MAX_STEER);
+                if (vectorSteeringForce.getMagnitudeSq() > vehiculo.maxSteerSq) {
+                    vectorSteeringForce.setMagnitude(vehiculo.maxSteer);
                 }
                 return vectorSteeringForce;
             }
 
-            function aplicarVectorDeFuerza(vehiculo, vectorSteeringForce) {
-                //Calculo la nueva velocidad y posicion del vehiculo sumando la posicion con el vector de fuerza
-                vehiculo.body.velocity.add(vectorSteeringForce.x, vectorSteeringForce.y);
-                //si la velocidad nueva es mayor a la maxima velocidad determinada, se deja la maxima.
-                if (vehiculo.body.velocity.getMagnitudeSq() > vehiculo.MAX_SPEED_SQ) {
-                    vehiculo.body.velocity.setMagnitude(vehiculo.MAX_SPEED);
+
+            function followLeader(agente, agentes) {
+                var vecReference = new Phaser.Point(0, 0);
+                var fuerza = new Phaser.Point(0, 0);
+                var tv = new Phaser.Point(lider.body.velocity.x, lider.body.velocity.y);
+
+                //calcular el punto de adelante que hay que evadir del lider
+                tv.normalize();
+                tv.x = tv.x * lider.behindDist;
+                tv.y = tv.y * lider.behindDist;
+                var posx = lider.position.x + tv.x;
+                var posy = lider.position.y + tv.y;
+                var ahead = new Phaser.Point(posx, posy);
+
+
+                //calcular el punto de atrás que hay que seguir y mantener distancia con el líder
+                tv.x = tv.x * -1;
+                tv.y = tv.y * -1;
+                posx = lider.position.x + tv.x;
+                posy = lider.position.y + tv.y;
+                var behind = new Phaser.Point(posx, posy);
+
+
+                behind = formacionWedge(agente.identificacion, behind);
+
+                //si el personaje esta en el campo de vision del lider hay que evadir 
+                if (estaFrente(agente, lider, ahead)) {
+                    var evadir = evade(agente, lider, 40);
+                    fuerza.x = fuerza.x + evadir.x;
+                    fuerza.y = fuerza.y + evadir.y;
+                }
+
+                //crear una fuerza para arribar al punto de atras del lider
+                var arribar = arrive(agente, behind);
+                fuerza.x = fuerza.x + arribar.x;
+                fuerza.y = fuerza.y + arribar.y;
+
+                //agregar la fuerza de separacion
+                var separar = separacion(agente, agentes);
+                fuerza.x = fuerza.x + separar.x;
+                fuerza.y = fuerza.y + separar.y;
+
+                return fuerza;
+            }
+            function isEven(value) {
+                return (value % 2 === 0);
+            }
+            function AFormation(agente) {
+
+                var angulo1 = 240 + lider.angle;  //para hacer la ormacion en a
+                var angulo2 = 120 + lider.angle;
+                var anguloNuevo = angulo1;
+                var distanciaN = 0;
+                var n, inicio = 0;
+                if (isEven(agente.identificacion)) {
+                    anguloNuevo = angulo1;
+                    distanciaN += 100;
+                    // console.log(distanciaN);
+                } else {
+                    anguloNuevo = angulo2;
+                }
+                var x = lider.x + (distanciaN * Math.cos((anguloNuevo * Math.PI) / 180));
+
+                var y = lider.y + (distanciaN * Math.sin((anguloNuevo * Math.PI) / 180));
+                agente.body.angularVelocity = lider.body.angularVelocity;
+                return new Phaser.Point(x, y);
+            }
+
+
+
+            //se aplica arrive al punto que le corresponde atras del lider, o sea a behind
+            function arrive(agente, behind) {
+                var arrivar = Phaser.Point.subtract(behind, agente.position).normalize();
+                var distancia = distance(agente.position, behind);
+                if (distancia <= agente.arriveRadius)//le seteo 50 al radio de arribo donde los arrivals deben ir disminuyendo su velocidad
+                {
+                    arrivar.setMagnitude(agente.maxSpeed * (distancia / 50));//reduzco la velocidad gradualmente dependiendo de la velocidad
+                }
+                else
+                {
+                    arrivar.setMagnitude(agente.maxSpeed);
+                }
+
+                return Phaser.Point.subtract(arrivar, agente.body.velocity);
+            }
+
+            //evade al lider teniendo en cuenta el campo de vision del mismo usa la funcion flee
+            function evade(agente, lider, radioEvitacion) {
+                var distancia = new Phaser.Point(lider.position.x - agente.position.x, lider.position.y - agente.position.y);
+                var updatesAhead = distancia.getMagnitude() / agente.maxSpeed;
+                var velocidadAjustada = new Phaser.Point(lider.body.velocity.x * updatesAhead, lider.body.velocity.y * updatesAhead);
+                var posicionFutura = new Phaser.Point(lider.position.x + velocidadAjustada.x, lider.position.y + velocidadAjustada.y);
+                return flee(agente, posicionFutura, radioEvitacion);
+
+            }
+
+            //escapar de la posicion futura calculada anteriormente  
+            function flee(agente, posicionFutura, radioEvitacion) {
+                var distancia = distance(agente.position, posicionFutura);
+                if (distancia <= radioEvitacion) {
+                    var punto = Phaser.Point.subtract(agente.position, posicionFutura);
+                    punto.normalize();
+                    var flee = new Phaser.Point(punto.x * agente.maxFleeSpeed, punto.y * agente.maxFleeSpeed);
+                    return flee;
+                }
+                else {
+                    return new Phaser.Point(0, 0);
                 }
             }
+
+            function separacion(agente, agentes) {
+                var fuerza = new Phaser.Point(0, 0);
+                var vecinos = 0; //los vecinos son la flota que ocupa el mismo cargo que el agente
+                for (var i = 0; i < agentes.length; i++) {
+                    if (agentes[i] !== agente && distance(agente.position, agentes[i].position) <= agente.separationRadius) {//si no es el agente y si la distancia entre estos agente y el agente a analizar es menor al radio de separacion
+                        fuerza.x = fuerza.x + agentes[i].position.x - agente.position.x;
+                        fuerza.y = fuerza.y + agentes[i].position.y - agente.position.y;
+                        vecinos++;
+                    }
+                }
+                if (vecinos !== 0) {
+                    fuerza.x = fuerza.x / vecinos;
+                    fuerza.y = fuerza.y / vecinos;
+                    fuerza.x = fuerza.x * -1;
+                    fuerza.y = fuerza.y * -1; //se deben repeler es pro ello que calculo fuerzas contrarias
+                }
+                fuerza.normalize();
+                fuerza.x = fuerza.x * agente.maxSeparation;
+                fuerza.y = fuerza.y * agente.maxSeparation;
+                return fuerza;
+            }
+
+            function estaFrente(agente, lider, ahead) {
+                return distance(ahead, agente.position) <= campoVisionLider || distance(lider.position, agente.position) <= campoVisionLider;
+
+            }
+            function distance(a, b) {
+                return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+            }
+
+            function formacionWedge(id, behind) {
+                //              console.log(lider);
+                console.log("rotacion del lider " + lider.rotation);
+                var rot = lider.rotation;//+ Math.PI / 3;
+                if (lider.body.velocity.x < 0) {
+                    rot = lider.rotation - 0.6;
+                }
+                else {
+                    if (lider.body.velocity.x > 0) {
+                        rot = lider.rotation + 2.54;
+                    }
+                }
+                console.log(rot);
+                var sep = 80;
+                switch (id) {
+                    case 0:
+                        var d = Math.cos(rot) * sep;
+                        var r = Math.sin(rot) * sep;
+                        return new Phaser.Point(behind.x + d, behind.y + r);
+                        break;
+                    case 1:
+                        var d = Math.cos(rot) * (sep * 2);
+                        var r = Math.sin(rot) * (sep * 2);
+                        return new Phaser.Point(behind.x + d, behind.y + r);
+                        break;
+                    case 2:
+                        var d = Math.cos(rot + Math.PI / 3) * (sep);
+                        var r = Math.sin(rot + Math.PI / 3) * (sep);
+                        return new Phaser.Point(behind.x + d, behind.y + r);
+                        break;
+                    case 3:
+                        var d = Math.cos(rot + Math.PI / 3) * (sep * 2);
+                        var r = Math.sin(rot + Math.PI / 3) * (sep * 2);
+                        return new Phaser.Point(behind.x + d, behind.y + r);
+                        break;
+                    case 4:
+                        var d = Math.cos(rot + (Math.PI / 6)) * (sep);
+                        var r = Math.sin(rot + (Math.PI / 6)) * (sep);
+                        return new Phaser.Point(behind.x + d, behind.y + r);
+                        break;
+                    case 5:
+                        var d = Math.cos(rot + (Math.PI / 6)) * (sep * 2);
+                        var r = Math.sin(rot + (Math.PI / 6)) * (sep * 2);
+                        return new Phaser.Point(behind.x + d, behind.y + r);
+                        break;
+                    default:
+                        return behind;
+                        break;
+                }
+
+            }
+
+
 
 
 
